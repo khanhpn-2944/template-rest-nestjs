@@ -1,7 +1,7 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 
-import { UserDto } from '../../user/dtos/user.dto';
+import { UserDto } from '../../user/dto/user.dto';
 
 export const CurrentUser = createParamDecorator(
   (_data: unknown, context: ExecutionContext) => {

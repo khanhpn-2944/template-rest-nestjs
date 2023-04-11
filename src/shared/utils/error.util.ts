@@ -1,6 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 
-import { ErrorDto } from '../dtos/error.dto';
+import { ErrorDto } from '../dto/error.dto';
 import { ErrorConstant } from '../../errors/error.constant';
 
 export class ErrorUtil {

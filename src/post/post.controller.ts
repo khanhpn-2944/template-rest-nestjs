@@ -7,45 +7,57 @@ import {
   Param,
   Delete,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
+
+import { CreatePostDto, PostDto, UpdatePostDto } from './dto';
 import { PostService } from './post.service';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { User } from '../entities/user.entity';
 import { CurrentUser } from '../shared/decorators/current-user.decorator';
+import { Serialize } from '../interceptors/transform.interceptor';
 
 @UseGuards(JwtAuthGuard)
 @Controller('posts')
+@Serialize(PostDto)
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
-  @Post()
-  create(@CurrentUser() currentUser, @Body() createPostDto: CreatePostDto) {
-    return this.postService.create(createPostDto, currentUser.id);
-  }
-
   @Get()
-  findAll() {
-    return this.postService.findAll();
+  async findAll(@CurrentUser() currentUser: User): Promise<PostDto[]> {
+    return await this.postService.findAll(currentUser.id);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    const post = this.postService.findOne(+id);
-    post.name.forEach((element) => {
-      console.log(element);
-    });
+  findOne(
+    @CurrentUser() currentUser: User,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<PostDto> {
+    return this.postService.findOneOrFail(currentUser.id, id);
+  }
 
-    return post;
+  @Post()
+  create(
+    @CurrentUser() currentUser: User,
+    @Body() createPostDto: CreatePostDto,
+  ): Promise<PostDto> {
+    return this.postService.create(currentUser.id, createPostDto);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
-    return this.postService.update(+id, updatePostDto);
+  update(
+    @CurrentUser() currentUser: User,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() updatePostDto: UpdatePostDto,
+  ): Promise<PostDto> {
+    return this.postService.update(currentUser.id, id, updatePostDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.postService.remove(+id);
+  remove(
+    @CurrentUser() currentUser: User,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<boolean> {
+    return this.postService.remove(currentUser.id, id);
   }
 }

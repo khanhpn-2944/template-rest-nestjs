@@ -5,23 +5,23 @@ import {
   RequestMethod,
   HttpStatus,
 } from '@nestjs/common';
-import { WINSTON_MODULE_NEST_PROVIDER, WinstonModule } from 'nest-winston';
 import { json } from 'body-parser';
+import { WINSTON_MODULE_NEST_PROVIDER, WinstonModule } from 'nest-winston';
 
 import { AppModule } from './app.module';
-import { TransformInterceptor } from './interceptors/transform.interceptor';
-import { loggerOption } from './logger/logger.option';
-import { ResponseLoggerInterceptor } from './interceptors/response.interceptor';
 import { AsyncRequestContext } from './async-request-context/async-request-context.service';
+import { ErrorConstant } from './errors/error.constant';
+import { BaseInterceptor } from './interceptors/base.interceptor';
+import { ResponseLoggerInterceptor } from './interceptors/response.interceptor';
+import { loggerOption } from './logger/logger.option';
+import { ProcessLogger } from './logger/process.logger';
+import { AppConStant } from './shared/constants/app.constant';
 import { BadRequestExceptionFilter } from './shared/filters/bad-request-exception.filter';
-import { QueryFailedErrorFilter } from './shared/filters/query-exception.filter';
-import { UnauthorizedExceptionFilter } from './shared/filters/unauthorized-exception.filter';
 import { EntityNotFoundExceptionFilter } from './shared/filters/entity-not-found-exception.filter';
 import { InternalServerErrorExceptionFilter } from './shared/filters/internal-server-error-exception.filter';
 import { NotFoundFilter } from './shared/filters/not-found-exception.filter';
-import { AppConStant } from './shared/constants/app.constant';
-import { ProcessLogger } from './logger/process.logger';
-import { ErrorConstant } from './errors/error.constant';
+import { QueryFailedErrorFilter } from './shared/filters/query-exception.filter';
+import { UnauthorizedExceptionFilter } from './shared/filters/unauthorized-exception.filter';
 
 async function bootstrap() {
   const jsonParseMiddleware = json({ limit: AppConStant.jsonBodySizeLimit });
@@ -40,7 +40,7 @@ async function bootstrap() {
   });
 
   app.useGlobalInterceptors(
-    new TransformInterceptor(),
+    new BaseInterceptor(),
     new ResponseLoggerInterceptor(filterParam),
   );
 

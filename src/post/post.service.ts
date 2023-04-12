@@ -1,47 +1,46 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { EntityNotFoundError } from 'typeorm';
 
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
+import { CreatePostDto, UpdatePostDto } from './dto';
 import { PostRepository } from './post.repository';
 import { Post } from '../entities/post.entity';
-import { ErrorUtil } from '../shared/utils/error.util';
-import { ErrorConstant } from '../errors/error.constant';
 
 @Injectable()
 export class PostService {
   constructor(private readonly postRepository: PostRepository) {}
 
-  async create(createPostDto: CreatePostDto, userId: string): Promise<Post> {
-    return this.postRepository.save({
-      ...createPostDto,
-      userId,
-    });
+  async findAll(userId: string): Promise<Post[]> {
+    return await this.postRepository.findAllPostsByUserId(userId);
   }
 
-  findAll() {
-    throw new BadRequestException(
-      ErrorUtil.badRequest(
-        ErrorConstant.type.somethingError,
-        'error property',
-        Post.name,
-      ),
-    );
-  }
-
-  findOne(id: number) {
-    return { name: undefined };
-  }
-
-  update(id: number, updatePostDto: UpdatePostDto) {
-    return `This action updates a #${id} post`;
-  }
-
-  remove(id: number) {
-    if (isNaN(id)) {
+  async findOneOrFail(userId: string, id: string): Promise<Post> {
+    const post = await this.postRepository.findPostById(userId, id);
+    if (!post) {
       throw new EntityNotFoundError(Post.name, undefined);
     }
 
-    return `This action removes a #${id} post`;
+    return post;
+  }
+
+  async create(userId: string, createPostDto: CreatePostDto): Promise<Post> {
+    return await this.postRepository.savePostAndTags(userId, createPostDto);
+  }
+
+  async update(
+    userId: string,
+    id: string,
+    updatePostDto: UpdatePostDto,
+  ): Promise<Post> {
+    return await this.postRepository.savePostAndTags(userId, {
+      id,
+      ...updatePostDto,
+    });
+  }
+
+  async remove(userId: string, id: string): Promise<boolean> {
+    await this.findOneOrFail(userId, id);
+    await this.postRepository.softDelete(id);
+
+    return true;
   }
 }

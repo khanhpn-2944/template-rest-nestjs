@@ -8,14 +8,19 @@ import {
   Delete,
   UseGuards,
   ParseUUIDPipe,
+  UseInterceptors,
+  UsePipes,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 import { CreatePostDto, PostDto, UpdatePostDto } from './dto';
 import { PostService } from './post.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { User } from '../entities/user.entity';
-import { CurrentUser } from '../shared/decorators/current-user.decorator';
 import { Serialize } from '../interceptors/transform.interceptor';
+import { CurrentUser } from '../shared/decorators/current-user.decorator';
+import { FileSizeValidationPipe } from '../shared/pipes/file-validation.pipe';
 
 @UseGuards(JwtAuthGuard)
 @Controller('posts')
@@ -36,21 +41,38 @@ export class PostController {
     return this.postService.findOneOrFail(currentUser.id, id);
   }
 
+  @UseInterceptors(FileInterceptor('file'))
+  @UsePipes(new FileSizeValidationPipe())
   @Post()
   create(
     @CurrentUser() currentUser: User,
     @Body() createPostDto: CreatePostDto,
+    @UploadedFile('file') file: Express.Multer.File,
   ): Promise<PostDto> {
-    return this.postService.create(currentUser.id, createPostDto);
+    return this.postService.create(
+      currentUser.id,
+      createPostDto,
+      file.buffer,
+      file.mimetype,
+    );
   }
 
+  @UseInterceptors(FileInterceptor('file'))
+  @UsePipes(new FileSizeValidationPipe())
   @Patch(':id')
   update(
     @CurrentUser() currentUser: User,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updatePostDto: UpdatePostDto,
+    @UploadedFile('file') file: Express.Multer.File,
   ): Promise<PostDto> {
-    return this.postService.update(currentUser.id, id, updatePostDto);
+    return this.postService.update(
+      currentUser.id,
+      id,
+      updatePostDto,
+      file.buffer,
+      file.mimetype,
+    );
   }
 
   @Delete(':id')

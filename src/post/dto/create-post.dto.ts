@@ -30,4 +30,9 @@ export class CreatePostDto {
   @ValidateNested({ each: true })
   @Type(() => CreateTagDto)
   tags: CreateTagDto[];
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(EntityConstant.shortLength)
+  fileName: string;
 }

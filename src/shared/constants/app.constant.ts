@@ -9,7 +9,7 @@ export const AppConStant = {
   jwtRefreshExpiresIn: '30d',
   cookieOptions: {
     domain: process.env.APP_DOMAIN,
-    secure: process.env.NODE_ENV === 'development' ? false : true,
+    secure: process.env.NODE_ENV !== 'development',
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30days same with refresh token
     httpOnly: true,
     signed: true,
@@ -28,5 +28,10 @@ export const AppConStant = {
   redis: {
     host: process.env.REDIS_HOST as string,
     port: process.env.REDIS_PORT as unknown as number,
+  },
+  maxFileSize: 5242880,
+  fileType: {
+    jpg: 'image/jpeg',
+    png: 'image/png',
   },
 };

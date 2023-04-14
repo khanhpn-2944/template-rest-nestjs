@@ -45,4 +45,12 @@ export class Post extends Base {
     nullable: true,
   })
   description: string;
+
+  @Column({
+    type: 'varchar',
+    name: 'file_name',
+    length: EntityConstant.shortLength,
+    nullable: true,
+  })
+  fileName: string;
 }

@@ -1,3 +1,7 @@
+import { randomBytes } from 'crypto';
+
+import { AppConStant } from '../constants/app.constant';
+
 export const capitalize = (str: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
@@ -26,4 +30,12 @@ export const getObjectByValue = (obj: object, value: string) => {
     return nestedValue;
   });
   return newObject;
+};
+
+export const generateToken = () => {
+  return randomBytes(24).toString('hex' as BufferEncoding);
+};
+
+export const getFileType = (fileType: string): string => {
+  return getKey(AppConStant.fileType, fileType);
 };

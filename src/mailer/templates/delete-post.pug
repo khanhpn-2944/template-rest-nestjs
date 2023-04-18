@@ -1,0 +1,10 @@
+b You have successfully deleted a post!
+br
+p Title:
+    = locals.post.title
+p Description:
+    = locals.post.description
+p Tags:
+br
+each tag in locals.post.tags
+    p= tag.name

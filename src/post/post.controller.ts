@@ -29,28 +29,29 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Get()
-  async findAll(@CurrentUser() currentUser: User): Promise<PostDto[]> {
-    return await this.postService.findAll(currentUser.id);
+  async findAll(@CurrentUser() { id: userId }: User): Promise<PostDto[]> {
+    return await this.postService.findAll(userId);
   }
 
   @Get(':id')
   findOne(
-    @CurrentUser() currentUser: User,
+    @CurrentUser() { id: userId }: User,
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<PostDto> {
-    return this.postService.findOneOrFail(currentUser.id, id);
+    return this.postService.findOneOrFail(userId, id);
   }
 
   @UseInterceptors(FileInterceptor('file'))
   @UsePipes(new FileSizeValidationPipe())
   @Post()
   create(
-    @CurrentUser() currentUser: User,
+    @CurrentUser() { id: userId, email: userEmail }: User,
     @Body() createPostDto: CreatePostDto,
     @UploadedFile('file') file: Express.Multer.File,
   ): Promise<PostDto> {
     return this.postService.create(
-      currentUser.id,
+      userId,
+      userEmail,
       createPostDto,
       file.buffer,
       file.mimetype,
@@ -61,13 +62,14 @@ export class PostController {
   @UsePipes(new FileSizeValidationPipe())
   @Patch(':id')
   update(
-    @CurrentUser() currentUser: User,
+    @CurrentUser() { id: userId, email: userEmail }: User,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updatePostDto: UpdatePostDto,
     @UploadedFile('file') file: Express.Multer.File,
   ): Promise<PostDto> {
     return this.postService.update(
-      currentUser.id,
+      userId,
+      userEmail,
       id,
       updatePostDto,
       file.buffer,
@@ -77,9 +79,9 @@ export class PostController {
 
   @Delete(':id')
   remove(
-    @CurrentUser() currentUser: User,
+    @CurrentUser() { id: userId, email: userEmail }: User,
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<boolean> {
-    return this.postService.remove(currentUser.id, id);
+    return this.postService.remove(userId, userEmail, id);
   }
 }

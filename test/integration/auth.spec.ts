@@ -10,7 +10,8 @@ import {
   mockJwtVerified,
 } from '../helper';
 import { User } from '../../src/entities/user.entity';
-import { hash } from '../../src/shared/utils/bcypt.util';
+import { AuthErrorConstant } from '../../src/errors/auth-errors.constant';
+import { hash } from '../../src/shared/utils/bcrypt.util';
 
 describe('Auth controller', () => {
   let app: INestApplication;
@@ -23,8 +24,9 @@ describe('Auth controller', () => {
     server = app.getHttpServer();
     dataSource = await initDataSource();
     setDataSource(dataSource);
+
     user = await create<User>(User, {
-      password: await hash('123456'),
+      password: await hash('password'),
     });
   });
 
@@ -36,14 +38,14 @@ describe('Auth controller', () => {
     await app.close();
   });
 
-  describe('Signin', () => {
+  describe('Sign in', () => {
     const route = 'auth/login';
 
-    describe('success', () => {
+    describe('Success', () => {
       it('Should login success', async () => {
         const [status, res] = await getJWTResponse(app, 'post', route, {
           username: user.username,
-          password: '123456',
+          password: 'password',
         });
 
         expect(res.accessToken).not.toBeNull();
@@ -53,13 +55,13 @@ describe('Auth controller', () => {
     });
 
     describe('Error', () => {
-      it('Should return error when wrong credentials', async () => {
+      it('Should return error when invalid credentials', async () => {
         const [status, res] = await getJWTResponse(app, 'post', route, {
           username: user.username,
-          password: '1234561',
+          password: 'wrong_password',
         });
 
-        expect(res.message).toEqual('Unauthorized');
+        expect(res.message).toEqual('Email or password is invalid');
         expect(status).toEqual(HttpStatus.UNAUTHORIZED);
       });
     });
@@ -70,30 +72,30 @@ describe('Auth controller', () => {
     let mock = null;
 
     describe('Error', () => {
-      it('Should return error when wrong token', async () => {
+      it('Should return error when invalid token', async () => {
         const [status, res] = await getJWTResponse(app, 'get', route);
 
-        expect(res.message).toEqual('Unauthorized');
+        expect(res.message).toEqual('Token is invalid');
         expect(status).toEqual(HttpStatus.UNAUTHORIZED);
       });
     });
 
-    describe('success', () => {
+    describe('Success', () => {
       beforeEach(() => {
         mock = mockJwtVerified(user);
       });
 
       afterEach(() => {
-        mock.mockClear();
+        mock.mockRestore();
       });
 
       it('Should save patient success if params valid', async () => {
         const [status, res] = await getJWTResponse(app, 'get', route);
 
-        expect(res.username).toEqual(user.username);
-        expect(res.code).toEqual(user.code);
-        expect(res.email).toEqual(user.email);
         expect(res.id).toEqual(user.id);
+        expect(res.username).toEqual(user.username);
+        expect(res.email).toEqual(user.email);
+        expect(res.code).toEqual(user.code);
         expect(status).toEqual(HttpStatus.OK);
       });
     });

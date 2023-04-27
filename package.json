@@ -20,6 +20,7 @@
     "m:run": "yarn typeorm migration:run -d dist/datasource/index",
     "m-test:run": "NODE_ENV=test ts-node --transpile-only ./node_modules/typeorm/cli.js migration:run -d dist/datasource/index.js",
     "m:revert": "yarn typeorm migration:revert -d dist/datasource/index",
+    "seed": "ts-node ./node_modules/typeorm-extension/dist/cli/index.js seed --config dist/datasource/config.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -58,7 +59,6 @@
     "rxjs": "^7.2.0",
     "typeorm": "^0.3.12",
     "typeorm-extension": "^2.7.0",
-    "typeorm-seeding": "^1.6.1",
     "winston": "^3.8.2"
   },
   "devDependencies": {

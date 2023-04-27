@@ -4,27 +4,31 @@ import {
   INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
-import request from 'supertest';
-import fs from 'fs';
 import { Test, TestingModule } from '@nestjs/testing';
+import fs from 'fs';
+import { load } from 'locter';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import request from 'supertest';
 import { DataSource, ObjectType } from 'typeorm';
-import { EntityProperty } from 'typeorm-seeding/dist/types';
 import {
   resolveFilePaths,
   resolveFilePatterns,
   useSeederFactory,
 } from 'typeorm-extension';
-import { load } from 'locter';
 
 import { AppModule } from '../src/app.module';
 import { AsyncRequestContext } from '../src/async-request-context/async-request-context.service';
-import { BadRequestExceptionFilter } from '../src/shared/filters/bad-request-exception.filter';
-import AppDataSource from '../src/datasource/index';
-import { ErrorDto } from '../src/shared/dtos/error.dto';
 import { JwtAuthGuard } from '../src/auth/guards/jwt-auth.guard';
+import AppDataSource from '../src/datasource/index';
 import { User } from '../src/entities/user.entity';
-import { hash } from '../src/shared/utils/bcypt.util';
+import { ErrorDto } from '../src/shared/dto/error.dto';
+import { BadRequestExceptionFilter } from '../src/shared/filters/bad-request-exception.filter';
+import { FileSizeValidationPipe } from '../src/shared/pipes/file-validation.pipe';
+import { hash } from '../src/shared/utils/bcrypt.util';
+
+export declare type EntityProperty<Entity> = {
+  [Property in keyof Entity]?: Entity[Property];
+};
 
 export const initApp = async (): Promise<INestApplication> => {
   await mockFs();
@@ -59,6 +63,7 @@ export const getJWTResponse = async (
   method: string,
   route: string,
   variables: any = {},
+  file?: Buffer,
   token = '',
 ) => {
   route = route.startsWith('/') ? route : `/${route}`;
@@ -110,14 +115,8 @@ export const formatError = (
 export const formatMultipleError = (errors: ErrorDto[]) => {
   const objects = [];
   for (const error of errors) {
-    const {
-      code,
-      message,
-      property = null,
-      resource = null,
-      index = null,
-    } = error;
-    objects.push({ resource, property, code, message, index });
+    const { message, property = null, resource = null, index = null } = error;
+    objects.push({ resource, property, message, index });
   }
 
   return { errors: objects, data: null };
@@ -133,11 +132,18 @@ export const mockFs = async () => {
   });
 };
 
+export async function make<T>(
+  entity: ObjectType<T>,
+  overrideParams?: EntityProperty<T>,
+) {
+  return await useSeederFactory(entity).make(overrideParams);
+}
+
 export async function create<T>(
   entity: ObjectType<T>,
   overrideParams?: EntityProperty<T>,
 ): Promise<T> {
-  return useSeederFactory(entity).save(overrideParams);
+  return await useSeederFactory(entity).save(overrideParams);
 }
 
 export async function createMany<T>(
@@ -145,7 +151,7 @@ export async function createMany<T>(
   amount = 1,
   overrideParams?: EntityProperty<T>,
 ): Promise<T[]> {
-  return useSeederFactory(entity).saveMany(amount, overrideParams);
+  return await useSeederFactory(entity).saveMany(amount, overrideParams);
 }
 
 export const setFactories = async (factoryFiles: string[]): Promise<void> => {
@@ -169,13 +175,41 @@ export const mockJwtVerified = (user: User = null) => {
       req.user =
         user ||
         create<User>(User, {
-          username: 'usernam',
+          username: 'username',
           password: await hash('password'),
           code: 'code',
           email: 'email@example.com',
         });
 
       return Promise.resolve(true);
+    });
+};
+
+export const mockWriteFile = () => {
+  return jest.spyOn(fs, 'writeFileSync').mockImplementation(() => {
+    return 'mock write file';
+  });
+};
+
+export const mockDeleteFile = () => {
+  return jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {
+    return 'mock delete file';
+  });
+};
+
+export const mockFileValidationPipe = () => {
+  return jest
+    .spyOn(FileSizeValidationPipe.prototype, 'transform')
+    .mockImplementation(async (value: any, metadata) => {
+      if (metadata.data === 'file') {
+        return {
+          size: 100,
+          mimetype: 'image/jpeg',
+          buffer: Buffer.from('abc'),
+        };
+      }
+
+      return value;
     });
 };
 

@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { Response } from 'express';
 import fs from 'fs';
+import PDFDocument from 'pdfkit';
 import { EntityNotFoundError } from 'typeorm';
 
 import { CreatePostDto, UpdatePostDto } from './dto';
@@ -114,6 +116,20 @@ export class PostService {
     await this.sendMailDeletedPost(userEmail, post);
 
     return true;
+  }
+
+  async downloadPdf(stream: Response, post: Post): Promise<void> {
+    const doc = new PDFDocument();
+
+    doc.on('data', (chunk) => stream.write(chunk));
+    doc.on('end', () => stream.end());
+    doc.fontSize(30).font('font/PalatinoBold.ttf').text(post.title, 100, 100);
+    doc.image(`uploads/${post.fileName}`, {
+      align: 'center',
+      valign: 'center',
+    });
+    doc.fontSize(20).text(post.description);
+    doc.end();
   }
 
   private async sendMailCreatedPost(userEmail: string, post: Post) {

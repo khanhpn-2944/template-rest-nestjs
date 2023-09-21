@@ -11,8 +11,11 @@ import {
   UseInterceptors,
   UsePipes,
   UploadedFile,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 
 import { CreatePostDto, PostDto, UpdatePostDto } from './dto';
 import { PostService } from './post.service';
@@ -83,5 +86,21 @@ export class PostController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<boolean> {
     return this.postService.remove(userId, userEmail, id);
+  }
+
+  @Get(':id/pdf')
+  async downloadPdf(
+    @CurrentUser() { id: userId }: User,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Res() response: Response,
+  ): Promise<void> {
+    const post = await this.postService.findOneOrFail(userId, id);
+    const pdfName = post.title;
+    const stream = response.writeHead(HttpStatus.OK, {
+      'Content-Type': 'application/pdf',
+      'Content-disposition': `attachment;filename=export.pdf`,
+    });
+
+    return await this.postService.downloadPdf(stream, post);
   }
 }

@@ -1,9 +1,10 @@
-import { Expose } from 'class-transformer';
+import { Field, ObjectType } from '@nestjs/graphql';
 
+@ObjectType()
 export class TagDto {
-  @Expose()
+  @Field()
   id: string;
 
-  @Expose()
+  @Field()
   name: string;
 }

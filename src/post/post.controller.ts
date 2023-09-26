@@ -15,7 +15,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import { CreatePostDto, PostDto, UpdatePostDto } from './dto';
-import { PostService } from './post.service';
+import { PostResolver } from './post.resolver';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { User } from '../entities/user.entity';
 import { Serialize } from '../interceptors/transform.interceptor';
@@ -26,11 +26,11 @@ import { FileSizeValidationPipe } from '../shared/pipes/file-validation.pipe';
 @Controller('posts')
 @Serialize(PostDto)
 export class PostController {
-  constructor(private readonly postService: PostService) {}
+  constructor(private readonly postResolver: PostResolver) {}
 
   @Get()
   async findAll(@CurrentUser() { id: userId }: User): Promise<PostDto[]> {
-    return await this.postService.findAll(userId);
+    return await this.postResolver.findAll(userId);
   }
 
   @Get(':id')
@@ -38,7 +38,7 @@ export class PostController {
     @CurrentUser() { id: userId }: User,
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<PostDto> {
-    return this.postService.findOneOrFail(userId, id);
+    return this.postResolver.findOneOrFail(userId, id);
   }
 
   @UseInterceptors(FileInterceptor('file'))
@@ -49,7 +49,7 @@ export class PostController {
     @Body() createPostDto: CreatePostDto,
     @UploadedFile('file') file: Express.Multer.File,
   ): Promise<PostDto> {
-    return this.postService.create(
+    return this.postResolver.create(
       userId,
       userEmail,
       createPostDto,
@@ -67,7 +67,7 @@ export class PostController {
     @Body() updatePostDto: UpdatePostDto,
     @UploadedFile('file') file: Express.Multer.File,
   ): Promise<PostDto> {
-    return this.postService.update(
+    return this.postResolver.update(
       userId,
       userEmail,
       id,
@@ -82,6 +82,6 @@ export class PostController {
     @CurrentUser() { id: userId, email: userEmail }: User,
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<boolean> {
-    return this.postService.remove(userId, userEmail, id);
+    return this.postResolver.remove(userId, userEmail, id);
   }
 }

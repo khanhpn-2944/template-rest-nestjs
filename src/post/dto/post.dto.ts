@@ -1,18 +1,18 @@
-import { Expose, Type } from 'class-transformer';
+import { Field, ObjectType } from '@nestjs/graphql';
 
 import { TagDto } from '../../tag/dto';
 
+@ObjectType()
 export class PostDto {
-  @Expose()
+  @Field()
   id: string;
 
-  @Expose()
+  @Field()
   title: string;
 
-  @Expose()
+  @Field({ nullable: true })
   description: string;
 
-  @Expose()
-  @Type(() => TagDto)
+  @Field(() => [TagDto])
   tags: TagDto[];
 }

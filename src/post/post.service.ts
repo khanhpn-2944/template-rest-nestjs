@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import fs from 'fs';
 import { EntityNotFoundError } from 'typeorm';
 
-import { CreatePostDto, UpdatePostDto } from './dto';
+import { CreatePostDto, PostDto, UpdatePostDto } from './dto';
 import { PostRepository } from './post.repository';
 import { Post } from '../entities/post.entity';
 import { JobService } from '../jobs/job.service';
@@ -15,17 +16,19 @@ export class PostService {
     private readonly jobService: JobService,
   ) {}
 
-  async findAll(userId: string): Promise<Post[]> {
-    return await this.postRepository.findAllPostsByUserId(userId);
+  async findAll(userId: string): Promise<PostDto[]> {
+    const posts = await this.postRepository.findAllPostsByUserId(userId);
+
+    return plainToInstance(PostDto, posts);
   }
 
-  async findOneOrFail(userId: string, id: string): Promise<Post> {
+  async findOneOrFail(userId: string, id: string): Promise<PostDto> {
     const post = await this.postRepository.findPostById(userId, id);
     if (!post) {
       throw new EntityNotFoundError(Post.name, undefined);
     }
 
-    return post;
+    return plainToInstance(PostDto, post);
   }
 
   async create(
@@ -34,7 +37,7 @@ export class PostService {
     createPostDto: CreatePostDto,
     file: Buffer,
     mimeType: string,
-  ): Promise<Post> {
+  ): Promise<PostDto> {
     if (file) {
       createPostDto = {
         ...createPostDto,
@@ -58,7 +61,7 @@ export class PostService {
 
     await this.sendMailCreatedPost(userEmail, post);
 
-    return post;
+    return plainToInstance(PostDto, post);
   }
 
   async update(
@@ -68,7 +71,7 @@ export class PostService {
     updatePostDto: UpdatePostDto,
     file: Buffer,
     mimeType: string,
-  ): Promise<Post> {
+  ): Promise<PostDto> {
     await this.findOneOrFail(userId, id);
 
     if (file) {
@@ -96,7 +99,7 @@ export class PostService {
 
     await this.sendMailUpdatedPost(userEmail, post);
 
-    return post;
+    return plainToInstance(PostDto, post);
   }
 
   async remove(
@@ -104,7 +107,9 @@ export class PostService {
     userEmail: string,
     id: string,
   ): Promise<boolean> {
-    const post = await this.findOneOrFail(userId, id);
+    const post = await this.postRepository.findOneOrFail({
+      where: { id, userId },
+    });
     await this.postRepository.softDelete(id);
 
     if (post.fileName) {

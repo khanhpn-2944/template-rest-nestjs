@@ -1,7 +1,10 @@
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
+import { GraphQLModule } from '@nestjs/graphql';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { join } from 'path';
 
 import { AsyncRequestContextModule } from './async-request-context/async-request-context.module';
 import { AuthModule } from './auth/auth.module';
@@ -17,6 +20,10 @@ import { UserModule } from './user/user.module';
 @Module({
   imports: [
     DatabaseModule,
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+    }),
     BullModule.forRoot({
       redis: { ...AppConStant.redis },
     }),

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { plainToInstance } from 'class-transformer';
 import fs from 'fs';
 import { EntityNotFoundError } from 'typeorm';
@@ -8,12 +9,14 @@ import { PostRepository } from './post.repository';
 import { Post } from '../entities/post.entity';
 import { JobService } from '../jobs/job.service';
 import { generateToken, getFileType } from '../shared/utils/app.util';
+import { EventConstant } from '../constants/event.constant';
 
 @Injectable()
 export class PostService {
   constructor(
     private readonly postRepository: PostRepository,
     private readonly jobService: JobService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async findAll(userId: string): Promise<PostDto[]> {
@@ -59,7 +62,7 @@ export class PostService {
       throw error;
     }
 
-    await this.sendMailCreatedPost(userEmail, post);
+    this.eventEmitter.emit(EventConstant.postCreated, { userEmail, post });
 
     return plainToInstance(PostDto, post);
   }
@@ -97,7 +100,7 @@ export class PostService {
       ...updatePostDto,
     });
 
-    await this.sendMailUpdatedPost(userEmail, post);
+    this.eventEmitter.emit(EventConstant.postUpdated, { userEmail, post });
 
     return plainToInstance(PostDto, post);
   }
@@ -116,12 +119,12 @@ export class PostService {
       fs.unlinkSync(`uploads/${post.fileName}`);
     }
 
-    await this.sendMailDeletedPost(userEmail, post);
+    this.eventEmitter.emit(EventConstant.postDeleted, { userEmail, post });
 
     return true;
   }
 
-  private async sendMailCreatedPost(userEmail: string, post: Post) {
+  async sendMailCreatedPost(userEmail: string, post: Post) {
     await this.jobService.sendMailJob({
       to: userEmail,
       subject: 'Create a post',
@@ -131,7 +134,7 @@ export class PostService {
     });
   }
 
-  private async sendMailUpdatedPost(userEmail: string, post: Post) {
+  async sendMailUpdatedPost(userEmail: string, post: Post) {
     await this.jobService.sendMailJob({
       to: userEmail,
       subject: 'Update a post',
@@ -141,7 +144,7 @@ export class PostService {
     });
   }
 
-  private async sendMailDeletedPost(userEmail: string, post: Post) {
+  async sendMailDeletedPost(userEmail: string, post: Post) {
     await this.jobService.sendMailJob({
       to: userEmail,
       subject: 'Delete a post',

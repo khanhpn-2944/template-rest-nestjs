@@ -1,6 +1,7 @@
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MailerModule } from '@nestjs-modules/mailer';
@@ -27,6 +28,7 @@ import { UserModule } from './user/user.module';
     BullModule.forRoot({
       redis: { ...AppConStant.redis },
     }),
+    EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     AsyncRequestContextModule.forRoot({ isGlobal: true }),
     MailerModule.forRootAsync({ useFactory: () => mailerConfig }),
